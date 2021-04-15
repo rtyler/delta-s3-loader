@@ -5,9 +5,13 @@ authors = ["R. Tyler Croy <rtyler@brokenco.de>"]
 edition = "2018"
 
 [dependencies]
+arrow  = { git = "https://github.com/apache/arrow.git", rev = "05b36567bd8216bec71b796fe3bb6811c71abbec" }
+aws_lambda_events = "0.4"
 deltalake = { git = "https://github.com/delta-io/delta-rs", branch = "main", features = ["s3"] }
 lambda_runtime = "0.3"
 log = "0.4"
+parquet = { git = "https://github.com/apache/arrow.git", rev = "05b36567bd8216bec71b796fe3bb6811c71abbec" }
 pretty_env_logger = "0.4"
 tokio = { version = "1.0", features = ["macros"]}
 serde = { version = "1", features = ["rc", "derive"]}
+serde_json = "1"
