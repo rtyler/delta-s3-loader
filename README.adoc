@@ -1,0 +1,9 @@
+= Delta S3 Loader
+
+This link:https://aws.amazon.com/lambda/[AWS Lambda] serves a singular purpose:
+bring JSON files from an S3 bucket into Delta Lake. This can be highly useful
+for legacy or external processes which rely on uploading JSON to an S3 bucket
+and cannot be properly updated to write directly to link:https://delta.io[Delta
+Lake].
+
+
