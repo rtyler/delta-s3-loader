@@ -10,7 +10,7 @@ enum WriterError {
     Generic,
 }
 
-fn json_to_batch(json: Vec<Value>) { //-> Result<RecordBatch, WriterError>  {
+fn json_to_batch(json: Vec<Value>) -> Result<RecordBatch, WriterError>  {
     use arrow::json::reader::*;
 
     // infer_json_schema_from_iterator is weird in that it expects each value to be wrapped in a
@@ -20,17 +20,17 @@ fn json_to_batch(json: Vec<Value>) { //-> Result<RecordBatch, WriterError>  {
 
     println!("schema: {:#?}", schema);
 
-    //Err(WriterError::Generic)
+    Err(WriterError::Generic)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[ignore]
     #[test]
     fn demo() {
-        let delta = deltalake::get_backend_for_uri("./data");
+        let _delta = deltalake::get_backend_for_uri("./data/simple");
+        todo!("Still need ta high level writer test");
     }
 
     #[test]
@@ -50,7 +50,6 @@ mod tests {
 
 
         let result = json_to_batch(value);
-        assert!(false);
-        //assert!(result.is_ok());
+        assert!(result.is_ok());
     }
 }

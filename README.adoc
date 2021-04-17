@@ -7,3 +7,8 @@ and cannot be properly updated to write directly to link:https://delta.io[Delta
 Lake].
 
 
+
+== Related work
+
+link:https://docs.databricks.com/spark/latest/structured-streaming/auto-loader.html[S3 Auto-loader]
+
