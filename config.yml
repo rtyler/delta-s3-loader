@@ -1,0 +1,16 @@
+# This is an example configuration for the delta-s3-loader lambda
+---
+sources:
+# This entry maps the existing S3 structure into a delta table named
+# `logs.audit_logs` which will be date stamp partitioned
+#
+# └── simple
+#     └── date=2021-04-16
+#         └── auditlog-1234.json
+  - bucket: 'my-data-bucket'
+    # Everything in the simple/ prefix will be considered part of this table
+    prefix: 'simple'
+    partitions:
+      - 'date'
+    database: 'logs'
+    table: 'audit_logs'

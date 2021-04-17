@@ -6,11 +6,15 @@ use aws_lambda_events::event::s3::S3Event;
 use lambda_runtime::{handler_fn, Context, Error};
 use log::*;
 
+mod config;
 mod writer;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    #[cfg(debug_assertions)]
     pretty_env_logger::init();
+
     info!("Initializing delta-s3-loader v{}", env!["CARGO_PKG_VERSION"]);
 
     let func = handler_fn(s3_event_handler);
@@ -49,9 +53,8 @@ async fn s3_event_handler(event: S3Event, _ctx: Context) -> Result<String, Error
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_s3_event_handler() {
-        let buf = r#"
+    fn sample_event() -> String {
+        String::from(r#"
 {
   "Records": [
     {
@@ -74,14 +77,14 @@ mod tests {
         "s3SchemaVersion": "1.0",
         "configurationId": "828aa6fc-f7b5-4305-8584-487c791949c1",
         "bucket": {
-          "name": "lambda-artifacts-deafc19498e3f2df",
+          "name": "my-bucket",
           "ownerIdentity": {
             "principalId": "A3I5XTEXAMAI3E"
           },
           "arn": "arn:aws:s3:::lambda-artifacts-deafc19498e3f2df"
         },
         "object": {
-          "key": "b21b84d653bb07b05b1e6b33684dc11b",
+          "key": "date=2021-04-16/afile.json",
           "size": 1305107,
           "eTag": "b21b84d653bb07b05b1e6b33684dc11b",
           "sequencer": "0C0F6F405D6ED209E1"
@@ -89,8 +92,12 @@ mod tests {
       }
     }
   ]
-}"#;
-        let event: S3Event = serde_json::from_str(&buf).expect("Failed to deserialize event");
+}"#)
+    }
+
+    #[tokio::test]
+    async fn test_s3_event_handler() {
+        let event: S3Event = serde_json::from_str(&sample_event()).expect("Failed to deserialize event");
         let result = s3_event_handler(event, Context::default()).await.expect("Failed to run event handler");
         assert_eq!("{}", result);
     }
