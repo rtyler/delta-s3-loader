@@ -57,6 +57,8 @@ async fn s3_event_handler(event: S3Event, _ctx: Context) -> Result<String, Error
 /**
  * The match_record function will look at a given S3EventRecord to see if the contents of that
  * record match a specific source configured for the Lambda
+ *
+ * Each of the records passed is assumed to be an `ObjectCreated:Put`
  */
 fn match_record<'a>(
     record: &'a S3EventRecord,
@@ -64,7 +66,41 @@ fn match_record<'a>(
 ) -> Option<&'a config::Source> {
     if let Some(bucket) = &record.s3.bucket.name {
         for source in &conf.sources {
-            if bucket == &source.bucket {
+            if bucket != &source.bucket {
+                continue;
+            }
+
+            if let Some(key) = &record.s3.object.key {
+                if !source.prefix.is_match(key) {
+                    continue;
+                }
+
+                let expected_partitions = source.partitions.len();
+
+                /* If there are no partitions expected, then we've already matched
+                 */
+                if expected_partitions == 0 {
+                    return Some(source);
+                }
+
+                /*
+                 * At this point the key and the prefix have matched, now to ensure
+                 * that the data is partitioned according to the configuration
+                 */
+                let partitions = Partition::from_path_str(key);
+                info!("parts: {:?}", partitions);
+
+                // No match if the discovered partitions don't match the count
+                if partitions.len() != source.partitions.len() {
+                    continue;
+                }
+
+                for index in 0..source.partitions.len() {
+                    // The partition at the index doesn't match what we're looking for
+                    if partitions[index].name != source.partitions[index] {
+                        return None;
+                    }
+                }
                 return Some(source);
             }
         }
@@ -72,9 +108,54 @@ fn match_record<'a>(
     None
 }
 
+/**
+ */
+#[derive(Clone, Debug)]
+struct Partition {
+    name: String,
+    value: String,
+}
+
+impl Partition {
+    /**
+     * Convert the given path string (e.g. root/year=2021/month=04/afile.json)
+     * into an ordered vector of the partitions contained within the path string
+     */
+    fn from_path_str(pathstr: &str) -> Vec<Partition> {
+        pathstr
+            .split("/")
+            .filter_map(|part| {
+                let sides: Vec<&str> = part.split("=").collect();
+                if sides.len() == 2 {
+                    Some(Partition {
+                        name: sides[0].to_string(),
+                        value: sides[1].to_string(),
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn from_path_str_no_partitions() {
+        let result = Partition::from_path_str("just/a/path");
+        assert_eq!(0, result.len());
+    }
+
+    #[test]
+    fn from_path_str_single() {
+        let partitions = Partition::from_path_str("some/year=2021/file.json");
+        assert_eq!(1, partitions.len());
+        assert_eq!(partitions[0].name, "year");
+        assert_eq!(partitions[0].value, "2021");
+    }
 
     /**
      * Make sure the sample event, which doesn't match a configured entry, doesn't return a source
@@ -100,6 +181,34 @@ mod tests {
         }]);
         let matches = match_record(&event.records[0], &conf);
         assert!(matches.is_some());
+    }
+
+    #[test]
+    fn test_match_record_prefix_mismatch() {
+        let event: S3Event =
+            serde_json::from_str(&sample_event()).expect("Failed to deserialize event");
+        let conf = config::Config::new(vec![config::Source {
+            bucket: "my-bucket".to_string(),
+            prefix: regex::Regex::new("^scoobydoo").expect("Failed to compile test regex"),
+            partitions: vec!["date".to_string()],
+            tablepath: "s3://test".to_string(),
+        }]);
+        let matches = match_record(&event.records[0], &conf);
+        assert!(matches.is_none());
+    }
+
+    #[test]
+    fn test_match_record_partition_mismatch() {
+        let event: S3Event =
+            serde_json::from_str(&sample_event()).expect("Failed to deserialize event");
+        let conf = config::Config::new(vec![config::Source {
+            bucket: "my-bucket".to_string(),
+            prefix: regex::Regex::new("^somepath").expect("Failed to compile test regex"),
+            partitions: vec!["year".to_string()],
+            tablepath: "s3://test".to_string(),
+        }]);
+        let matches = match_record(&event.records[0], &conf);
+        assert!(matches.is_none());
     }
 
     /**
