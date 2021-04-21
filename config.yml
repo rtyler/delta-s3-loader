@@ -7,10 +7,11 @@ sources:
 # └── simple
 #     └── date=2021-04-16
 #         └── auditlog-1234.json
-  - bucket: 'my-data-bucket'
+  - bucket: 'data'
     # Everything in the simple/ prefix will be considered part of this table
-    prefix: 'simple'
+    # the prefix may be a regular expression that is compatible with the Rust
+    # regex crate
+    prefix: '^raw/simple'
     partitions:
       - 'date'
-    database: 'logs'
-    table: 'audit_logs'
+    tablepath: 's3://data/delta/audit_logs'

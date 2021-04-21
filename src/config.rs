@@ -40,8 +40,7 @@ struct Source {
     #[serde(with = "serde_regex")]
     prefix: Regex,
     partitions: Vec<String>,
-    database: String,
-    table: String,
+    tablepath: String,
 }
 
 #[cfg(test)]
