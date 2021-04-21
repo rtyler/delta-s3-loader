@@ -7,11 +7,16 @@ sources:
 # └── simple
 #     └── date=2021-04-16
 #         └── auditlog-1234.json
-  - bucket: 'data'
+    # The name of the bucket should _just_ be a name of the bucket since this
+    # will come from an AWS Lambda event
+  - bucket: 'raw'
     # Everything in the simple/ prefix will be considered part of this table
     # the prefix may be a regular expression that is compatible with the Rust
     # regex crate
-    prefix: '^raw/simple'
+    prefix: '^simple'
+    # When specifying partitions, the source data is expected to be parttioned,
+    # as it is in this example
     partitions:
       - 'date'
-    tablepath: 's3://data/delta/audit_logs'
+    # The table path is the destination for the written delta
+    tablepath: 's3://delta/audit_logs'
