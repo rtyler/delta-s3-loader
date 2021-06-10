@@ -1,14 +1,16 @@
 = Delta S3 Loader
 
-This link:https://aws.amazon.com/lambda/[AWS Lambda] serves a singular purpose:
-bring JSON files from an S3 bucket into Delta Lake. This can be highly useful
-for legacy or external processes which rely on uploading JSON to an S3 bucket
-and cannot be properly updated to write directly to link:https://delta.io[Delta
-Lake].
 
+Delta S3 Loader is a project to quickly and cheaply bring JSON files added to
+S3 buckets into Delta Lake. This can be highly useful for legacy or external
+processes which rely on uploading JSON to an S3 bucket and cannot be properly
+updated to write directly to link:https://delta.io[Delta Lake].
+
+Delta S3 Loader can be built into a stnadalone binary or an
+link:https://aws.amazon.com/lambda/[AWS Lambda].
 
 
 == Related work
 
-link:https://docs.databricks.com/spark/latest/structured-streaming/auto-loader.html[S3 Auto-loader]
+link:https://docs.databricks.com/spark/latest/structured-streaming/auto-loader.html[S3 Auto-loader in Apache Spark]
 
