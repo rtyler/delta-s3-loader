@@ -1,13 +1,133 @@
-= Delta S3 Loader
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
 
+:toc: macro
+
+= Delta S3 Loader
 
 Delta S3 Loader is a project to quickly and cheaply bring JSON files added to
 S3 buckets into Delta Lake. This can be highly useful for legacy or external
 processes which rely on uploading JSON to an S3 bucket and cannot be properly
 updated to write directly to link:https://delta.io[Delta Lake].
 
-Delta S3 Loader can be built into a stnadalone binary or an
-link:https://aws.amazon.com/lambda/[AWS Lambda].
+toc::[]
+
+== Modes
+
+Delta S3 Loader can be built into a standalone binary or an
+link:https://aws.amazon.com/lambda/[AWS Lambda]. While both modes are
+functionally identical they have different configuration requirements as
+mentioned below.
+
+=== Standalone
+
+A standalone instance of Delta S3 Loader requires:
+
+* Destination Delta table path
+* SQS queue ARN
+
+=== Lambda
+
+When deployed with AWS Lambda, the Lambda function should be configured with an
+AWS SQS trigger. This causes AWS to manage the queue on behalf of Delta S3
+Loader. Learn more in the
+link:https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-lambda-function-trigger.html[AWS
+Lambda trigger documentation].
+
+== Design
+
+This project is designed to work in a Lambda or packaged up into a container.
+It relies on
+link:https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html[S3
+Event Notifications] which are delivered into an
+link:http://aws.amazon.com/sqs/[Amazon SQS] queue. The S3 Event Notifications
+should be configured to funnel events to a single SQS queue per table. The
+Delta S3 Loader will take **all** messages from a single queue and insert those
+into a single table.
+
+Additionally, for source buckets which have _multiple_ types of data in them you may use link:https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html[filtering on event notifications] to specify different object prefixes, etc. 
+For example, in a bucket named `audit_logs` bucket that has data prefixed with:
+
+* `databricks/workspaceId=123/*.json`
+* `tableau/*.json`
+* `admin_console/domain=github.com/*.json`
+
+A deployment of Delta S3 Loader to _only_ process the `admin_console` events
+into an Delta table would require the following event configuration:
+
+.SQS Event Configuration
+[source,xml]
+----
+<NotificationConfiguration>
+  <QueueConfiguration>
+      <Id>1</Id>
+      <Filter>
+          <S3Key>
+              <FilterRule>
+                  <Name>prefix</Name>
+                  <Value>admin_console/</Value>
+              </FilterRule>
+              <FilterRule>
+                  <Name>suffix</Name>
+                  <Value>json</Value>
+              </FilterRule>
+          </S3Key>
+     </Filter>
+     <Queue>arn:aws:sqs:us-west-2:444455556666:admin_console_audit_queue</Queue>
+     <Event>s3:ObjectCreated:Put</Event>
+  </QueueConfiguration>
+</NotificationConfiguration>
+----
+
+[CAUTION]
+====
+Always use different source and destination S3 buckets to avoid infinite loops!
+====
+
+
+A standalone Delta S3 Loader invocation for the above queue might look something like:
+
+
+[source,bash]
+----
+delta-s3-loader -t s3://warehouse/audit_logs_raw/databricks \ # <1>
+                -p domain \ # <2>
+                -q "arn:aws:sqs:us-west-2:444455556666:admin_console_audit_queue" # <3>
+----
+<1> Specify a destination Delta Lake table path in S3.
+<2> Annotate the partition columns to help the loader partition data properly.
+<3> Specify the input SQS queue by ARN
+
+
+== Environment Variables
+
+When running in an AWS Lambda, Delta S3 Loader should be configured solely with environment variables. In a standalone mode the daemon can be configured with command line options _or_ environment variables
+
+
+|===
+| Name | Required | Description
+
+| `RUST_LOG`
+| No
+| Define the log level for the process: `error`, `warn`, `info`, `debug`.
+
+|===
+
+
+=== Authentication/Authorization
+
+Delta S3 Loader assumes that the right AWS environment variables, such as
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are defined in the environment.
+Under the hood the Delta S3 Loader is not responsible for
+authentication/authorization so please consult the
+link:https://github.com/rusoto/rusoto/blob/master/AWS-CREDENTIALS.md[Rusoto AWS
+credentials documentation] for more information.
+
 
 
 == Related work
