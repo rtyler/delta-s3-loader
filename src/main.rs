@@ -4,7 +4,7 @@
 use clap::{App, Arg};
 use log::*;
 
-#[cfg(lambda)]
+#[cfg(feature = "lambda")]
 mod lambda;
 mod writer;
 
@@ -50,12 +50,12 @@ fn preboot() {
         .get_matches();
 }
 
-#[cfg(not(lambda))]
+#[cfg(not(feature = "lambda"))]
 fn main() {
     preboot();
 }
 
-#[cfg(lambda)]
+#[cfg(feature = "lambda")]
 #[tokio::main]
 async fn main() -> Result<(), lambda_runtime::Error> {
     preboot();
