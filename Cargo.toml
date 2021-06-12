@@ -5,6 +5,10 @@ authors = ["R. Tyler Croy <rtyler@brokenco.de>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "*"
+# This crate is not only usesful for Lambda since it has an S3Event structure
+# which is useful in the standalone mode as well
+aws_lambda_events = "*"
 arrow  = "4"
 clap = "2"
 #deltalake = { git = "https://github.com/rtyler/delta-rs", branch = "main", features = ["s3"] }
@@ -25,8 +29,6 @@ tokio = { version = "1.0", features = ["macros"]}
 
 # Needed for the lambda feature
 lambda_runtime = { version = "0.3", optional = true }
-aws_lambda_events = { version = "0.4", optional = true }
-
 
 [features]
-lambda = ["lambda_runtime", "aws_lambda_events"]
+lambda = ["lambda_runtime"]
