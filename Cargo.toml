@@ -11,7 +11,7 @@ anyhow = "*"
 aws_lambda_events = "*"
 arrow  = "4"
 clap = "2"
-#deltalake = { git = "https://github.com/rtyler/delta-rs", branch = "main", features = ["s3"] }
+deltalake = { git = "https://github.com/rtyler/delta-rs", branch = "features-for-rustls", features = ["s3-rustls"] }
 dotenv = "0.15"
 log = "0.4"
 parquet = "4"

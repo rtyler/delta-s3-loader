@@ -73,13 +73,15 @@ async fn main() -> Result<(), anyhow::Error> {
         loop {
             let rcv = ReceiveMessageRequest {
                 queue_url: queue.to_string(),
+                // Always consuming the max number of available messages to reduce round trips
                 max_number_of_messages: Some(10),
-                wait_time_seconds: Some(5),
+                // This wait time is being used as the effective loop interval for the main runloop
+                wait_time_seconds: Some(10),
                 ..Default::default()
             };
 
             let res = client.receive_message(rcv).await?;
-            debug!("Message(s) received: {:?}", res);
+            trace!("Message(s) received: {:?}", res);
 
             if let Some(messages) = &res.messages {
                 for message in messages {
@@ -93,7 +95,7 @@ async fn main() -> Result<(), anyhow::Error> {
                             }
                         }
                     } else {
-                        debug!("Message had no body: {:?}", &message);
+                        warn!("Message had no body: {:?}", &message);
                     }
 
                     if let Some(receipt) = &message.receipt_handle {
@@ -108,12 +110,10 @@ async fn main() -> Result<(), anyhow::Error> {
                     }
                 }
             }
-            break;
         }
     } else {
         panic!("When running in standalone mode the `queue` argument (or QUEUE_URL env variable) must be present");
     }
-    Ok(())
 }
 
 #[cfg(feature = "lambda")]
