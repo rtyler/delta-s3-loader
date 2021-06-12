@@ -12,6 +12,8 @@ fn preboot() {
     #[cfg(debug_assertions)]
     pretty_env_logger::init();
 
+    dotenv::dotenv().ok();
+
     info!(
         "Initializing delta-s3-loader v{}",
         env!["CARGO_PKG_VERSION"]

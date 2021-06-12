@@ -8,6 +8,7 @@ edition = "2018"
 arrow  = "4"
 clap = "2"
 deltalake = { git = "https://github.com/rtyler/delta-rs", branch = "mixing-in-deltalake_ext", features = ["s3"] }
+dotenv = "0.15"
 log = "0.4"
 parquet = "4"
 pretty_env_logger = "0.4"
