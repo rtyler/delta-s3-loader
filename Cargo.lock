@@ -408,6 +408,7 @@ dependencies = [
  "clap 2.33.3",
  "deltalake",
  "dotenv",
+ "form_urlencoded",
  "lambda_runtime",
  "log",
  "parquet",

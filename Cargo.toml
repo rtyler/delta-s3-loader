@@ -13,6 +13,7 @@ arrow  = "4"
 clap = "2"
 deltalake = { git = "https://github.com/rtyler/delta-rs", branch = "features-for-rustls", features = ["s3-rustls"] }
 dotenv = "0.15"
+form_urlencoded = "1"
 log = "0.4"
 parquet = "4"
 pretty_env_logger = "0.4"
